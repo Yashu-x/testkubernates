@@ -1,28 +1,28 @@
 
-# name: build and push 
+name: build and push 
 
-# on:
-#   push:
-#     branches:
-#       - main
+on:
+  push:
+    branches:
+      - main
 
-# jobs:
-#   build-and-push:
-#     runs-on: ubuntu-latest
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
     
-#     env:
-#       REGISTRY: ghcr.io
-#       FRONTEND_IMAGE: ghcr.io/yashu-x/frontend
-#       BACKEND_IMAGE: ghcr.io/yashu-x/backend
-#       TIMESTAMP: ${{ github.run_number }}-${{ github.sha }}
+    env:
+      REGISTRY: ghcr.io
+      FRONTEND_IMAGE: ghcr.io/yashu-x/frontend
+      BACKEND_IMAGE: ghcr.io/yashu-x/backend
+      TIMESTAMP: ${{ github.run_number }}-${{ github.sha }}
     
-#     permissions:
-#       contents: read
-#       packages: write  
+    permissions:
+      contents: read
+      packages: write  
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
 #       - name: Write Secret to File
 #         run: echo "${{ secrets.ENVSECRET }}" > ./log-reg-Sever/.env
