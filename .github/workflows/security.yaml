@@ -177,4 +177,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sbom-report
+          path: sbom.json
           
