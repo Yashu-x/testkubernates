@@ -1,0 +1,47 @@
+
+# name: build and push 
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+    
+#     env:
+#       REGISTRY: ghcr.io
+#       FRONTEND_IMAGE: ghcr.io/yashu-x/frontend
+#       BACKEND_IMAGE: ghcr.io/yashu-x/backend
+#       TIMESTAMP: ${{ github.run_number }}-${{ github.sha }}
+    
+#     permissions:
+#       contents: read
+#       packages: write  
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Write Secret to File
+#         run: echo "${{ secrets.ENVSECRET }}" > ./log-reg-Sever/.env
+
+#       - name: Login to GitHub Container Registry
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ${{ env.REGISTRY }}
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+
+#       - name: Build and push frontend image
+#         run: |
+#           docker build -t ${{ env.FRONTEND_IMAGE }}:${{ env.TIMESTAMP }} -t ${{ env.FRONTEND_IMAGE }}:latest ./log-reg-Client
+#           docker push ${{ env.FRONTEND_IMAGE }}:${{ env.TIMESTAMP }}
+#           docker push ${{ env.FRONTEND_IMAGE }}:latest
+
+#       - name: Build and push backend image
+#         run: |
+#           docker build -t ${{ env.BACKEND_IMAGE }}:${{ env.TIMESTAMP }} -t ${{ env.BACKEND_IMAGE }}:latest ./log-reg-Sever
+#           docker push ${{ env.BACKEND_IMAGE }}:${{ env.TIMESTAMP }}
+#           docker push ${{ env.BACKEND_IMAGE }}:latest

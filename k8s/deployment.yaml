@@ -1,0 +1,66 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        imagePullPolicy: Always
+        image:  ghcr.io/yashu-x/backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ALLOWED_ORIGINS
+          value: "http://localhost:8000"
+        - name: JWT-SECRET
+          value: "1234"
+        - name: PORT
+          value: "8000"
+        - name: MONGO_URI
+          value: "mongodb+srv://nthashenu:HfiVenxioFIpVb2T@k8sclusterr.wjwznhn.mongodb.net/"
+          resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        imagePullPolicy: Always
+        image: ghcr.io/yashu-x/frontend:latest
+        ports:
+        - containerPort: 4173
+        env:
+        - name: BACKEND_BASE_URL
+          value: "http://__BACKEND_IP__:8000"
+
+---
+

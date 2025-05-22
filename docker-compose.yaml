@@ -1,0 +1,46 @@
+
+# This file is used to define the services that will be used in the application.
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    volumes:
+      # - /mongo_data/db:/data/db
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+  
+  backend:
+    build: 
+      context: ./log-reg-sever
+      dockerfile: Dockerfile
+    container_name: backend_container
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    volumes:
+      - ./log-reg-sever:/app
+      - /app/node_modules
+    env_file:
+      - ./log-reg-Sever/.env
+
+
+
+  frontend:
+    build:
+      context: ./log-reg-client
+      dockerfile: Dockerfile
+    container_name: frontend_container
+    ports:
+      - "4173:4173"
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./log-reg-client:/app
+      - /app/node_modules
+
+volumes:
+  mongo_data:

@@ -1,0 +1,63 @@
+# name: Terraform GKE Workflow
+
+# on:
+#   workflow_run:
+#     workflows: ["security"]
+#     types:
+#       - completed
+
+# jobs:
+#   terraform:
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         shell: bash
+#         working-directory: ./iac-terraform
+
+#     env:
+#       GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+#       PROJECT_ID: ${{ secrets.PROJECT_ID }}
+#       REGION: ${{ secrets.REGION }}
+#       CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+
+#       - name: Set up Terraform
+#         uses: hashicorp/setup-terraform@v1
+#         with:
+#           terraform_version: 1.6.6
+
+#       - name: Authenticate gcloud
+#         uses: google-github-actions/auth@v0
+#         with:
+#           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+#       - name: Set up gcloud CLI
+#         uses: google-github-actions/setup-gcloud@v1
+
+#       - name: Set GCP project and region
+#         run: |
+#           gcloud config set project $PROJECT_ID
+#           gcloud config set compute/region $REGION
+
+#       - name: Initialize Terraform
+#         run: terraform init
+
+#       - name: Debug Credentials (optional)
+#         run: |
+#           echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
+#           gcloud auth list
+
+#       - name: Terraform Format
+#         run: terraform fmt -check
+      
+#       - name: Terraform Validate
+#         run: terraform validate
+
+#       - name: Terraform Plan
+#         run: terraform plan
+
+#       - name: Apply Terraform Changes
+#         run: terraform apply -auto-approve

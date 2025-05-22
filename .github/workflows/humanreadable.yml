@@ -1,0 +1,182 @@
+# name: Security Report Parser
+
+# on:
+#   workflow_run:
+#     workflows: ["security"] 
+#     types: [completed]
+
+# jobs:
+#   parse-reports:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Download all artifacts
+#         uses: actions/download-artifact@v4
+#         with:
+#           path: artifacts
+
+#       - name: Setup Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.10'
+
+#       - name: Install dependencies
+#         run: |
+#           pip install jq pandas tabulate
+#           sudo apt-get install -y jq
+
+#       - name: Process Checkov report (IaC)
+#         run: |
+#           echo "Processing Checkov report..."
+#           # Handle both SARIF and JSON formats
+#           if [ -f "artifacts/checkov-report/checkov-results.sarif" ]; then
+#             jq -r '
+#               "CHECKOV IAC SCAN RESULTS\n" +
+#               "=======================\n" +
+#               "Summary:\n" +
+#               "  Total checks: \(.runs[0].results | length)\n" +
+#               "  Failed checks: \(.runs[0].results | map(select(.kind == "fail")) | length)\n\n" +
+#               "Critical Findings:\n" +
+#               (.runs[0].results | 
+#                map(select(.kind == "fail" and (.level == "error" or .level == "warning")) |
+#                .[] |
+#                "  - \(.ruleId) in \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)\n" +
+#                "    \(.message.text)\n")
+#             ' artifacts/checkov-report/checkov-results.sarif > checkov-human.txt
+#           elif [ -f "artifacts/checkov-report/checkov-results.json" ]; then
+#             jq -r '
+#               "CHECKOV IAC SCAN RESULTS\n" +
+#               "=======================\n" +
+#               "Summary:\n" +
+#               "  Passed checks: \(.summary.passed)\n" +
+#               "  Failed checks: \(.summary.failed)\n" +
+#               "  Skipped checks: \(.summary.skipped)\n\n" +
+#               "Critical Findings:\n" +
+#               (.results.failed_checks | 
+#                map(select(.check_severity == "HIGH" or .check_severity == "CRITICAL")) |
+#                .[] |
+#                "  - \(.check_name) in \(.file_path):\(.file_line_range[0])\n" +
+#                "    \(.check_message)\n")
+#             ' artifacts/checkov-report/checkov-results.json > checkov-human.txt
+#           else
+#             echo "No Checkov report found" > checkov-human.txt
+#           fi
+
+#       - name: Process Gitleaks report 
+#         run: |
+#           echo "Processing Gitleaks report..."
+#           if [ -f "artifacts/gitleaks-report/gitleaks-report.json" ]; then
+#             jq -r '
+#               "GITLEAKS SECRETS SCAN\n" +
+#               "====================\n" +
+#               "Total findings: \(length)\n\n" +
+#               (.[] | 
+#                "Finding #\(.FindingNumber):\n" +
+#                "  Rule: \(.Rule)\n" +
+#                "  File: \(.File):\(.StartLine)\n" +
+#                "  Context: \(.Context | gsub("\n";" "))\n" +
+#                "  Commit: \(.Commit)\n" +
+#                "  Author: \(.Author)\n" +
+#                "  Date: \(.Date)\n" +
+#                "----------------------------------------\n")
+#             ' artifacts/gitleaks-report/gitleaks-report.json > gitleaks-human.txt
+#           else
+#             echo "No Gitleaks report found" > gitleaks-human.txt
+#           fi
+
+#       - name: Process Semgrep report 
+#         run: |
+#           echo "Processing Semgrep report..."
+#           if [ -f "artifacts/semgrep-sast-report/semgrep-results.sarif" ]; then
+#             jq -r '
+#               "SEMGREP SAST RESULTS\n" +
+#               "===================\n" +
+#               "Summary:\n" +
+#               "  Findings: \(.runs[0].results | length)\n\n" +
+#               "Top Issues:\n" +
+#               (.runs[0].results | 
+#                group_by(.rule.id) | 
+#                sort_by(-length) | 
+#                .[] | 
+#                "  \(.[0].rule.id) - \(length) occurrences\n" +
+#                "    Severity: \(.[0].level)\n" +
+#                "    Example: \(.[0].locations[0].physicalLocation.artifactLocation.uri):\(.[0].locations[0].physicalLocation.region.startLine)\n")
+#             ' artifacts/semgrep-sast-report/semgrep-results.sarif > semgrep-human.txt
+#           else
+#             echo "No Semgrep report found" > semgrep-human.txt
+#           fi
+
+#       - name: Process Snyk reports (SCA/Container)
+#         run: |
+#           echo "Processing Snyk reports..."
+#           # Process code scan
+#           if [ -f "artifacts/snyk-security-reports/snyk-code-results.sarif" ]; then
+#             jq -r '
+#               "SNYK CODE ANALYSIS\n" +
+#               "=================\n" +
+#               "Summary:\n" +
+#               "  Issues: \(.runs[0].results | length)\n\n" +
+#               "Findings:\n" +
+#               (.runs[0].results | 
+#                .[] | 
+#                "  \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)\n" +
+#                "  \(.message.text)\n" +
+#                "  Severity: \(.level)\n" +
+#                "----------------------------------------\n")
+#             ' artifacts/snyk-security-reports/snyk-code-results.sarif > snyk-code-human.txt
+#           else
+#             echo "No Snyk code report found" > snyk-code-human.txt
+#           fi
+
+#           # Process container scans
+#           for scan in backend frontend; do
+#             if [ -f "artifacts/snyk-security-reports/snyk-container-${scan}-results.sarif" ]; then
+#               jq -r '
+#                 "SNYK CONTAINER SCAN (\(scan))\n" +
+#                 "===================\n" +
+#                 "Summary:\n" +
+#                 "  Issues: \(.runs[0].results | length)\n\n" +
+#                 "Vulnerabilities:\n" +
+#                 (.runs[0].results | 
+#                  group_by(.ruleId) | 
+#                  sort_by(-length) | 
+#                  .[] | 
+#                  "  \(.[0].ruleId) - \(length) instances\n" +
+#                  "  Severity: \(.[0].level)\n" +
+#                  "  Message: \(.[0].message.text)\n")
+#               ' artifacts/snyk-security-reports/snyk-container-${scan}-results.sarif > snyk-container-${scan}-human.txt
+#             else
+#               echo "No Snyk container report found for ${scan}" > snyk-container-${scan}-human.txt
+#             fi
+#           done
+
+#       - name: Generate consolidated report
+#         run: |
+#           echo "SECURITY SCAN SUMMARY REPORT" > security-summary.txt
+#           echo "===========================" >> security-summary.txt
+#           echo "Generated: $(date)" >> security-summary.txt
+#           echo "" >> security-summary.txt
+          
+#           # Add counts from each report
+#           echo "Findings Summary:" >> security-summary.txt
+#           echo "- IaC Issues: $(grep -c "Failed checks" checkov-human.txt || echo 0)" >> security-summary.txt
+#           echo "- Secrets Found: $(grep -c "Finding #" gitleaks-human.txt || echo 0)" >> security-summary.txt
+#           echo "- SAST Findings: $(grep -c "occurrences" semgrep-human.txt || echo 0)" >> security-summary.txt
+#           echo "- Snyk Code Issues: $(grep -c "Severity:" snyk-code-human.txt || echo 0)" >> security-summary.txt
+#           echo "- Container Vulns (Backend): $(grep -c "instances" snyk-container-backend-human.txt || echo 0)" >> security-summary.txt
+#           echo "- Container Vulns (Frontend): $(grep -c "instances" snyk-container-frontend-human.txt || echo 0)" >> security-summary.txt
+          
+#           echo "" >> security-summary.txt
+#           echo "Detailed reports available as artifacts." >> security-summary.txt
+
+#           # Add critical findings overview
+#           echo "" >> security-summary.txt
+#           echo "Critical Findings Overview:" >> security-summary.txt
+#           grep -A 2 -i "Critical Findings" *-human.txt | grep -v "===" >> security-summary.txt || true
+
+#       - name: Upload human-readable reports
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: security-human-reports
+#           path: |
+#             *-human.txt
+#             security-summary.txt

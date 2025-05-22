@@ -1,0 +1,79 @@
+# name: Deploy on GKE
+
+# on:
+#   workflow_run:
+#     workflows:
+#       - kubernatescluster
+#     types:
+#       - completed
+
+# jobs:
+#   deploy-to-gke:
+#     name: Deploy to GKE
+#     runs-on: self-hosted
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4.1.1
+
+#       - id: auth
+#         uses: google-github-actions/auth@v2
+#         with:
+#           credentials_json: "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}"
+
+#       - name: Set up Cloud SDK
+#         uses: google-github-actions/setup-gcloud@v2
+
+#       - name: Install kubectl
+#         run: gcloud components install kubectl
+
+#       - name: Verify kubectl
+#         run: kubectl version --client
+
+#       - name: Authenticate and configure GKE cluster
+#         env:
+#           PROJECT_ID: ${{ secrets.GOOGLE_PROJECT }}
+#         run: |
+#           gcloud config set project $PROJECT_ID
+#           gcloud container clusters get-credentials autopilot-cluster-3 --region us-central1
+
+#       - name: Apply Backend Service and Deployment
+#         run: |
+#           kubectl apply -f kubernetes/backend-service.yaml
+#           kubectl apply -f kubernetes/deployment.yaml
+
+#       - name: Wait for Backend LoadBalancer IP
+#         id: get_backend_ip
+#         run: |
+#           echo "Waiting for Backend IP"
+#           for i in {1..30}; do
+#             BACKEND_IP=$(kubectl get svc backend-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+#             if [[ -n "$BACKEND_IP" ]]; then
+#               echo "Found IP: $BACKEND_IP"
+#               echo "BACKEND_IP=$BACKEND_IP" >> $GITHUB_ENV
+#               break
+#             fi
+#             echo "Waiting for IP..."
+#             sleep 10
+#           done
+
+#       - name: Replace __BACKEND_IP__ in deployment file
+#         run: |
+#           sed -i "s|__BACKEND_IP__|${{ env.BACKEND_IP }}|g" kubernetes/deployment.yaml
+
+#       - name: Apply Frontend Service and Deployment
+#         run: |
+#           kubectl apply -f kubernetes/frontend-service.yaml
+#           kubectl apply -f kubernetes/deployment.yaml
+
+#       - name: Wait for Deployment Rollout
+#         run: |
+#           kubectl rollout status deployment/backend-deployment
+#           kubectl rollout status deployment/frontend-deployment
+
+#       - name: Output LoadBalancer IPs
+#         run: |
+#           echo "Frontend IP: $(kubectl get svc frontend-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}")"
+#           echo "Backend IP:  $(kubectl get svc backend-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}")"
+
+
