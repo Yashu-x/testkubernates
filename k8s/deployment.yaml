@@ -47,7 +47,7 @@ spec:
       containers:
       - name: frontend
         imagePullPolicy: Always
-        image: ghcr.io/yashu-x/frontend:13-2530359b4df37ca8338763dd4599c0ee68c5b962
+        image: ghcr.io/yashu-x/frontend:latest
         ports:
         - containerPort: 4173
         env:
