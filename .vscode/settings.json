@@ -1,5 +1,6 @@
 {
     "yaml.schemas": {
         "kubernetes://schema/apps/v1@deployment+apps/v1@deployment": "file:///e%3A/project%20files/mern_test/k8s/deployment.yaml"
-    }
+    },
+    "sarif-viewer.connectToGithubCodeScanning": "off"
 }

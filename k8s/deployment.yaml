@@ -1,5 +1,3 @@
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,7 +15,7 @@ spec:
       containers:
       - name: backend
         imagePullPolicy: Always
-        image:  ghcr.io/yashu-x/backend:latest
+        image: ghcr.io/yashu-x/backend:latest
         ports:
         - containerPort: 8000
         env:
@@ -29,13 +27,7 @@ spec:
           value: "8000"
         - name: MONGO_URI
           value: "mongodb+srv://nthashenu:HfiVenxioFIpVb2T@k8sclusterr.wjwznhn.mongodb.net/"
-          resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+
 
 ---
 apiVersion: apps/v1
@@ -55,12 +47,12 @@ spec:
       containers:
       - name: frontend
         imagePullPolicy: Always
-        image: ghcr.io/yashu-x/frontend:latest
+        image: ghcr.io/yashu-x/frontend:13-2530359b4df37ca8338763dd4599c0ee68c5b962
         ports:
         - containerPort: 4173
         env:
         - name: BACKEND_BASE_URL
-          value: "http://__BACKEND_IP__:8000"
+          value: "http://backend-service:8000"
 
 ---
 

@@ -1,181 +1,181 @@
-name: security
+# name: security
 
-on:
-  workflow_run:
-    workflows: ["build and push"]
-    types:
-      - completed
+# on:
+#   workflow_run:
+#     workflows: ["build and push"]
+#     types:
+#       - completed
 
-jobs:
-  snyk-scan:        # SCA SCAN
-    runs-on: ubuntu-latest
+# jobs:
+#   snyk-scan:        # SCA SCAN
+#     runs-on: ubuntu-latest
 
-    env:
-      REGISTRY: ghcr.io
-      FRONTEND_IMAGE: ghcr.io/yashu-x/frontend
-      BACKEND_IMAGE: ghcr.io/yashu-x/backend
+#     env:
+#       REGISTRY: ghcr.io
+#       FRONTEND_IMAGE: ghcr.io/yashu-x/frontend
+#       BACKEND_IMAGE: ghcr.io/yashu-x/backend
 
-    permissions:
-      contents: read
-      security-events: write
-      packages: read  
+#     permissions:
+#       contents: read
+#       security-events: write
+#       packages: read  
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Install Snyk CLI
-        run: npm install -g snyk
+#       - name: Install Snyk CLI
+#         run: npm install -g snyk
 
-      - name: Authenticate Snyk CLI
-        run: snyk auth $SNYK_TOKEN
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#       - name: Authenticate Snyk CLI
+#         run: snyk auth $SNYK_TOKEN
+#         env:
+#           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk code scan
-        id: snyk-code-scan
-        continue-on-error: true
-        run: |
-          snyk code test --org=$SNYK_ORG --sarif-file-output=snyk-code-results.sarif
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#       - name: Snyk code scan
+#         id: snyk-code-scan
+#         continue-on-error: true
+#         run: |
+#           snyk code test --org=$SNYK_ORG --sarif-file-output=snyk-code-results.sarif
+#         env:
+#           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Login to GitHub Container Registry
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ${{ env.REGISTRY }}
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Scan backend container with Snyk
-        id: snyk-container-backend-scan
-        continue-on-error: true
-        run: |
-          snyk container test ${{ env.BACKEND_IMAGE }}:latest \
-            --org=$SNYK_ORG \
-            --file=./log-reg-Sever/Dockerfile \
-            --sarif-file-output=snyk-container-backend-results.sarif
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#       - name: Scan backend container with Snyk
+#         id: snyk-container-backend-scan
+#         continue-on-error: true
+#         run: |
+#           snyk container test ${{ env.BACKEND_IMAGE }}:latest \
+#             --org=$SNYK_ORG \
+#             --file=./log-reg-Sever/Dockerfile \
+#             --sarif-file-output=snyk-container-backend-results.sarif
+#         env:
+#           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Scan frontend container with Snyk
-        id: snyk-container-frontend-scan
-        continue-on-error: true
-        run: |
-          snyk container test ${{ env.FRONTEND_IMAGE }}:latest \
-            --org=$SNYK_ORG \
-            --file=./log-reg-Client/Dockerfile \
-            --sarif-file-output=snyk-container-frontend-results.sarif
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#       - name: Scan frontend container with Snyk
+#         id: snyk-container-frontend-scan
+#         continue-on-error: true
+#         run: |
+#           snyk container test ${{ env.FRONTEND_IMAGE }}:latest \
+#             --org=$SNYK_ORG \
+#             --file=./log-reg-Client/Dockerfile \
+#             --sarif-file-output=snyk-container-frontend-results.sarif
+#         env:
+#           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Upload Snyk SARIF reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-security-reports
-          path: |
-            snyk-code-results.sarif
-            snyk-container-frontend-results.sarif
-            snyk-container-backend-results.sarif
+#       - name: Upload Snyk SARIF reports
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: snyk-security-reports
+#           path: |
+#             snyk-code-results.sarif
+#             snyk-container-frontend-results.sarif
+#             snyk-container-backend-results.sarif
 
-  semgrep-Scan:  # SAST Scan
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    needs: snyk-scan
+#   semgrep-Scan:  # SAST Scan
+#     runs-on: ubuntu-latest
+#     continue-on-error: true
+#     needs: snyk-scan
 
-    container:
-      image: semgrep/semgrep
+#     container:
+#       image: semgrep/semgrep
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Run Semgrep scan
-        run: semgrep scan --config auto --sarif --output semgrep-results.sarif || true
+#       - name: Run Semgrep scan
+#         run: semgrep scan --config auto --sarif --output semgrep-results.sarif || true
 
-      - name: Upload Semgrep SARIF
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: semgrep-sast-report
-          path: semgrep-results.sarif
+#       - name: Upload Semgrep SARIF
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: semgrep-sast-report
+#           path: semgrep-results.sarif
 
-  gitleaks-scan:  # Secret leaks Detection
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    needs: semgrep-Scan
+#   gitleaks-scan:  # Secret leaks Detection
+#     runs-on: ubuntu-latest
+#     continue-on-error: true
+#     needs: semgrep-Scan
 
-    permissions:
-      contents: read
+#     permissions:
+#       contents: read
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
       
-      - name: Install Gitleaks
-        run: |
-          curl -L https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz -o gitleaks.tar.gz
-          tar -xzf gitleaks.tar.gz
-          sudo mv gitleaks /usr/local/bin/
+#       - name: Install Gitleaks
+#         run: |
+#           curl -L https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz -o gitleaks.tar.gz
+#           tar -xzf gitleaks.tar.gz
+#           sudo mv gitleaks /usr/local/bin/
 
-      - name: Run Gitleaks scan
-        run: |
-          gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif || true
+#       - name: Run Gitleaks scan
+#         run: |
+#           gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif || true
         
-      - name: Archive Gitleaks report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-         name: gitleaks-report
-         path: gitleaks-report.sarif
+#       - name: Archive Gitleaks report
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#          name: gitleaks-report
+#          path: gitleaks-report.sarif
 
-  checkov-scan:  # IaC 
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    needs: gitleaks-scan
+#   checkov-scan:  # IaC 
+#     runs-on: ubuntu-latest
+#     continue-on-error: true
+#     needs: gitleaks-scan
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Install Checkov
-        run: pip install checkov
+#       - name: Install Checkov
+#         run: pip install checkov
 
-      - name: Run Checkov scan
-        continue-on-error: true
-        run: |
-          checkov -d . --output sarif --output-file-path checkov-results.sarif
+#       - name: Run Checkov scan
+#         continue-on-error: true
+#         run: |
+#           checkov -d . --output sarif --output-file-path checkov-results.sarif
 
-      - name: Upload Checkov report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: checkov-report
-          path: checkov-results.sarif
+#       - name: Upload Checkov report
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: checkov-report
+#           path: checkov-results.sarif
 
-  Sbom-scan:
-    runs-on: ubuntu-latest
-    needs: checkov-scan
-    continue-on-error: true
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#   Sbom-scan:
+#     runs-on: ubuntu-latest
+#     needs: checkov-scan
+#     continue-on-error: true
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Install Syft
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+#       - name: Install Syft
+#         run: |
+#           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Generate SBOM
-        run: |
-          syft packages dir:. --output json > sbom.json || true
+#       - name: Generate SBOM
+#         run: |
+#           syft packages dir:. --output json > sbom.json || true
 
-      - name: Upload SBOM
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-report
-          path: sbom.json
+#       - name: Upload SBOM
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: sbom-report
+#           path: sbom.json
           
