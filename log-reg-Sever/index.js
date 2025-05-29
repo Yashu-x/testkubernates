@@ -16,17 +16,7 @@ mongoose.connect(process.env.MONGO_URL)
 .then(()=> console.log('Database connected'))
 .catch((err)=> console.log("Database not connected",err))
 
-// app.get('/test-db', async (req, res) => {
-//   try {
-//     const db = mongoose.connection.db;
-//     const result = await db.collection('test').insertOne({ test: 'value' });
-//     res.send('Inserted document: ' + JSON.stringify(result));
-//   } catch (err) {
-//     res.status(500).send('Database error: ' + err.message);
-//   }
-// });
 
-//middleware
 app.use(express.json())
 app.use(cookieParser())
 app.use(express.urlencoded({extended :false}))
