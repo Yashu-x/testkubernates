@@ -20,7 +20,7 @@ spec:
         - containerPort: 8000
         env:
         - name: ALLOWED_ORIGINS
-          value: "http://localhost:8000"
+          value: "http://backend-service:4173"
         - name: JWT-SECRET
           value: "1234"
         - name: PORT
@@ -29,30 +29,4 @@ spec:
           value: "mongodb+srv://nthashenu:HfiVenxioFIpVb2T@k8sclusterr.wjwznhn.mongodb.net/"
 
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-      - name: frontend
-        imagePullPolicy: Always
-        image: ghcr.io/yashu-x/frontend:latest
-        ports:
-        - containerPort: 4173
-        env:
-        - name: BACKEND_BASE_URL
-          value: "http://backend-service:8000"
-
----
 
