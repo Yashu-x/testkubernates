@@ -20,7 +20,7 @@ spec:
         - containerPort: 8000
         env:
         - name: ALLOWED_ORIGINS
-          value: "http://backend-service:4173"
+          value: "http://127.0.0.1:8000,http://localhost:80"
         - name: JWT-SECRET
           value: "1234"
         - name: PORT
